@@ -1,0 +1,260 @@
+setwd("/home/gryffindor/Documents")
+
+library(factoextra)
+library(fpc)
+library(NbClust)
+library(ggpubr)
+library(dendextend)
+
+library(tidyverse)
+library(lme4)
+library(cluster)
+library(clValid)
+library(NbClust)
+library(stargazer)
+library(ggpubr)
+library(RColorBrewer)
+library(dplyr)
+library(pheatmap)
+library(xtable)
+
+library(cluster)
+
+
+ephys_culture<-read.csv("ephys_data_cluster_2.csv")
+ephys_culture_candidates<-ephys_culture[144:158,]
+
+culture_taco_exp<-scale(ephys_culture_candidates[,c("ap_halfwidth",
+                                                    "latency",
+                                                    "first_second_adaptation_ratio",
+                                                    "capacitance",
+                                                    "spikes",
+                                                    "first_last_adaptation_ratio",
+                                                    "threshold",
+                                                    "input_resistance","ahp_amplitude")])
+
+
+hc.res.cult <- eclust(culture_taco_exp, "hclust", hc_metric = "euclidean", 
+                      hc_method = "ward.D2", graph = T)
+plot(hc.res.cult)
+
+
+pm<-pheatmap(culture_taco_exp,clustering_method = "ward.D2", legend = T,
+         labels_row = geges,
+         fontsize = 11)
+
+px<-heatmap(culture_taco_exp ,
+            hclustfun = hclust(dist(culture_taco_exp, method="euclidean")))
+color_labels(pm, ephys_culture$gen_label[144:158])
+
+taco_cult_sil<-fviz_nbclust(culture_taco_exp, FUN=hcut, method = "silhouette")
+taco_cult_sil
+taco_cult_sil[1] #
+
+
+
+geges<-c(rep("sag-Pax6cKO",5), rep("sag-Pax6+/-",5), rep("E17.5 control",5))
+
+
+
+plot(hc.res.cult,labels=F,xlab="",sub = "", main="Clustering")
+fa<-color_branches(k=2,dend = hc.res.cult)
+labels_colors(fa)<-"white"
+plot(fa, ylab="Distance (Euclidean)")
+
+colored_bars(ephys_culture$gen_label[144:158],
+             dend = hc.res.cult,rowLabels = "Genotype")
+legend("top",
+       legend=c("Emx1Cre-Pax6cKO ","E17.5 control", "Emx1Cre-Pax6+/-"),
+       col=c("grey","purple","dark green"),
+       pch = 15, 
+       bty = "n", 
+       pt.cex = 0.8, 
+       cex = 0.7, 
+       text.col = "black", 
+       horiz = F , 
+       inset = c(0.4, 0.1))
+
+#dose response, phase plots
+setwd("/home/gryffindor/Downloads")
+dose_resp<-read.csv("gsh2.csv")
+head(dose_resp)
+
+setwd("/home/gryffindor/Downloads")
+dr<-read.csv("phase_plot.csv")
+library(dplyr)
+phase<-dr %>% 
+  mutate(phase = Membrane.potential - lag(Membrane.potential, 
+                                          default = Membrane.potential[2]))
+
+plot(phase[,2], phase[,3], type="l")
+
+exp1<-read.csv("traces_meeting.csv", skip=1)
+phase<-exp1 %>% 
+  mutate(phase1 = Membrane.potential.7 - lag(Membrane.potential.7, 
+                                             default = Membrane.potential.7[2]))
+
+phase_2<-exp1 %>% 
+  mutate(phase1 = Membrane.potential.5 - lag(Membrane.potential.5, 
+                                             default = Membrane.potential.5[2]))
+
+phase_3<-exp1 %>% 
+  mutate(phase1 = Membrane.potential.3 - lag(Membrane.potential.3, 
+                                             default = Membrane.potential.3[2]))
+
+
+par(mfrow=c(2,2))
+plot(phase[,16], phase[,17], type="l")
+plot(phase_2[,12], phase_2[,17], type="l")
+plot(phase_3[,6], phase_3[,17], type="l")
+
+plot(phase[,16], phase[,17], type="l")
+plot(phase[,16], phase[,17], type="l")
+
+
+phase_pl<-read.csv("ints.csv", skip=1
+                   )
+
+phase_2<-phase_pl %>% 
+  mutate(phase = dr.2 - lag(dr.2, 
+                                default = dr.2[1]))
+plot(phase_2$dr.2, 3*phase_2$phase, type="l", xlab="",ylab="")
+
+
+udr<-max(phase_2$phase)/min(phase_2$phase)
+udr
+
+
+ff<-read.csv("culture")
+
+#cell cult progression
+
+plot(ff$s, ff$Membrane.potential.8, axes=FALSE, 
+     xlab = "", ylab = "", col="black",type="l")
+segments(0.05,-50,0.10,-50,col="black", lwd = 2) #scale bar
+segments(0.05,-50,0.05,-30,col="black", lwd=2)
+
+plot(ff$s, ff$Membrane.potential.6, axes=FALSE, 
+     xlab = "", ylab = "", col="black",type="l")
+segments(0.05,-50,0.10,-50,col="black", lwd = 2) #scale bar
+segments(0.05,-50,0.05,-30,col="black", lwd=2)
+
+plot(ff$s, ff$Membrane.potential.12, axes=FALSE, 
+     xlab = "", ylab = "", col="black",type="l")
+segments(0.05,-50,0.10,-50,col="black", lwd = 2) #scale bar
+segments(0.05,-50,0.05,-30,col="black", lwd=2)
+
+
+plot(ff$s, ff$Membrane.potential.24, axes=FALSE, 
+     xlab = "", ylab = "", col="black",type="l")
+segments(0.05,-50,0.10,-50,col="black", lwd = 2) #scale bar
+segments(0.05,-50,0.05,-30,col="black", lwd=2)
+
+plot(ff$s, ff$Membrane.potential.2, axes=FALSE, 
+     xlab = "", ylab = "", col="black",type="l")
+segments(0.05,-50,0.10,-50,col="black", lwd = 2) #scale bar
+segments(0.05,-50,0.05,-30,col="black", lwd=2)
+
+plot(ff$s, ff$Membrane.potential.1, axes=FALSE, 
+     xlab = "", ylab = "", col="black",type="l")
+segments(0.05,-50,0.10,-50,col="black", lwd = 2) #scale bar
+segments(0.05,-50,0.05,-30,col="black", lwd=2)
+
+#tables of expression
+
+rostral_up<-c(NPY=0.8275, Olig2=2.90, Gsh2=7.98, Sox2=0.457)
+rostral_p<-c(NPY=0.0016, Olig2=7.24*10^(-104), Gsh2=7.78*10^(-21), Sox2=1.42*10^(-12))
+rostral_frd<-c(NPY=0.0318, Olig2=5.44*10^(-100), Gsh2=2.85*10^(-26), Sox2=1.74*10^(-10))
+
+
+caudal_up<-c(NPY=0.7809, Olig2=4.093, Gsh2=6.209, Sox2=0.339)
+caudal_p<-c(NPY=0.0017, Olig2=7.38*10^(-133), Gsh2=5.21*10^(-21), Sox2=1.50*10^(-7))
+caudal_frd<-c(NPY=0.046, Olig2=1.11*10^(-128), Gsh2=2.30*10^(-18), Sox2=1.33*10^(-5))
+
+par(mfrow=c(1,2))
+barplot(rostral_up,
+        width=c(10,10,10,10),
+        ylab="log2FoldChange",
+        main="Rostral",
+        col=c("purple","grey","grey","grey"),
+        ylim=c(0,7))
+
+barplot(caudal_up,
+        width=c(10,10,10,10),
+        ylab="log2FoldChange",
+        main="Caudal",
+        col=c("purple","grey","grey","grey")
+        )
+        
+#quick summary        
+tac1_mean<-tac1 %>% 
+  group_by(type,new,g_type,litter,age,mouse_id) %>%
+  summarise_at(c(colnames(tac1[2:20])),mean)
+
+#colour vectors by condition
+palli<-c("#0ED53B","#0A9329","#055116","#DF12AD", "#920C71","#530640" )
+
+f<-c()
+for (i in vect){
+  if (i=="p5"){
+    coli<-palli[1]
+    f<-append(f,coli)
+  }
+  else if (i=="p6"){
+    coli<-palli[2]
+    f<-append(f,coli)
+    
+  }
+  else if (i=="p7"){
+    coli<-palli[3]
+    f<-append(f,coli)
+  }
+  else if (i=="p8"){
+    coli<-palli[4]
+    f<-append(f,coli)
+  }
+  else if (i=="p9"){
+    coli<-palli[5]
+    f<-append(f,coli)
+  }
+  else if (i=="p10"){
+    coli<-palli[6]
+    f<-append(f,coli)
+  }
+}
+
+
+palli2<-c("#ECE21E","#747369")
+
+a<-c()
+for (i in vect2){
+  if (i=="mut"){
+    coli2<-palli2[1]
+    a<-append(a,coli2)
+  }
+  else if (i=="het"){
+    coli2<-palli2[2]
+    a<-append(a,coli2)
+    
+  }
+  
+}
+
+
+#Pearson
+ggscatter(ectopia, x = "cap", y = "rmp", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          ylab = "Resting Membrane Potential (mV)", xlab = "Capacitance (pF)")
+          
+#rows to graphs
+l23_ir_graph<-ggplot(data=df_means[select rows,], aes(x=g_type, y=ap_halfwidth,color=g_type)) +
+  scale_colour_manual(values=cbp1)+
+  stat_summary(fun = mean, geom = "bar", fill="white",width=0.5)+
+  #geom_errorbar(aes(ymin=mean(input_resistance)+l12_ir_ci[1], ymax=mean(input_resistance)+l12_ir_ci[2]), width=.2,
+  #position=position_dodge(.9),width=0.1)+
+  #geom_col(stat="identity", fill="white", position="dodge", width = 0.45)+
+  geom_jitter(data=df_means[30:52,], aes(x=g_type, y=ap_halfwidth), width = 0.12)+
+  #geom_jitter
+  #expand_limits(y=c(0,140))+
+  labs(x=" ",y="AP halfwidth (ms)",colour=" ")
